@@ -7,7 +7,7 @@ This Bash script automates the process of building and pushing different quantiz
 ### Usage:
 
 ```bash
-./.sh [options]
+./ollamafy.sh [options]
 ```
 
 ### Options:
