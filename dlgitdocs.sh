@@ -39,3 +39,4 @@ url = $repo" >> .gitmodules
 # Initialize and update all submodules
 git submodule init
 git submodule update
+git sparse-checkout disable
