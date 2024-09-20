@@ -23,7 +23,7 @@ This Bash script automates the process of building and pushing different quantiz
 ### Example:
 
 ```bash
-./ollamafy.sh -u myusername -m mymodell -f mymodel.ptfb -q q4_0 -l q4_0
+./ollamafy.sh -u <mantainer_username> -m <modelname> -f </path/to/modelname.modelfile> -l q4_0 -v v1
 ```
 
 ### Script Breakdown:
