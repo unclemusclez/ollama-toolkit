@@ -15,7 +15,7 @@ This Bash script automates the process of building and pushing different quantiz
 - `-q|--quant [QUANTIZATION]`: Specify the quantization method to use (e.g., q4_0, fp16). Defaults to building all available quantizations.
 - `-u|--username [USERNAME]`: Your username for the model registry.
 - `-m|--model [MODEL_NAME]`: The name of your model.
-- `v|--version [VERSION]`: (Optional) Version tag for the model.
+- `-v|--version [VERSION]`: (Optional) Version tag for the model.
 - `-p|--parameters [PARAMETERS]`: (Optional) Parameters string for the model.
 - `-l|--latest [LATEST]`: Specify a quantization to tag as "latest". Must be one of the available quantizations defined in the script.
 - `-f|--file [MODEL_FILE]`: Path to your model file.

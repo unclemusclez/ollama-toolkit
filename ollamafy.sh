@@ -51,11 +51,16 @@ if [ -n "$QUANTIZATION" ]; then
 fi
 
 for QUANT in "${QUANTIZATIONS[@]}"; do
-    MODEL_TAG="$USERNAME/$MODEL_NAME:$QUANT" 
-
-    [ -n "$PARAMETERS" ] && [ -n "$VERSION" ] && MODEL_TAG="$USERNAME/$MODEL_NAME:$PARAMETERS-$VERSION-$QUANT"
-    [ -n "$PARAMETERS" ] && MODEL_TAG="$USERNAME/$MODEL_NAME:$PARAMETERS-$QUANT"
-    [ -n "$VERSION" ] && MODEL_TAG="$USERNAME/$MODEL_NAME:$VERSION-$QUANT"
+  MODEL_TAG="$USERNAME/$MODEL_NAME:$QUANT" 
+    if [ -n "$PARAMETERS" ]; then 
+      MODEL_TAG="$USERNAME/$MODEL_NAME:$PARAMETERS-$QUANT"
+    fi  
+    if [ -n "$VERSION" ]; then
+      MODEL_TAG="$USERNAME/$MODEL_NAME:$VERSION-$QUANT"
+    fi
+    if [ -n "$PARAMETERS" -a -n "$VERSION" ]; then 
+      MODEL_TAG="$USERNAME/$MODEL_NAME:$PARAMETERS-$VERSION-$QUANT"
+    fi
 
 
   if [ "$QUANT" = "fp16" ]; then
@@ -72,5 +77,4 @@ for QUANT in "${QUANTIZATIONS[@]}"; do
 
    [ -n "$VERSION" ] && ( ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$VERSION"; ollama push "$USERNAME/$MODEL_NAME:$VERSION" )
   fi
-  
 done
