@@ -11,7 +11,6 @@ mkdir -p gitdocs
 cd gitdocs
 
 git init
-git sparse-checkout set docs Docs doc DOCS Doc DOC documents Documents README.md *.md tutorials examples content guide
 
 # Loop through each repository URL
 for repo in "${repos[@]}"; do
@@ -23,7 +22,8 @@ for repo in "${repos[@]}"; do
   git clone --no-checkout --depth 1 "$repo" $repo_name
 
   cd $repo_name
-  git checkout
+  git sparse-checkout set --no-cone '!/*' '/docs' '/Docs' '/doc' '/DOCS' '/Doc' '/DOC' '/documents' '/Documents' '/*.md' '/tutorials' '/examples' '/content' '/guides' '/*.txt' '/*.sh'
+  git read-tree -mu HEAD
 
   # Return to the parent directory
   cd ..
