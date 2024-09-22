@@ -128,16 +128,16 @@ for %%Q in (%QUANTIZATIONS%) do (
    set MODEL_TAG=!USERNAME!/%MODEL_NAME!:%PARAMETERS%-%VERSION%-%%Q
   )
 
- IF "%%Q" == "fp16" olaama create -f "%MODEL_FILE%" %MODEL_TAG%
+ IF "%%Q" == "fp16" ollama create -f "%MODEL_FILE%" %MODEL_TAG%
  IF NOT "%%Q" == "fp16" (
-   olaama create --quantize "%%Q" -f "%MODEL_FILE%" %MODEL_TAG% )
+   ollama create --quantize "%%Q" -f "%MODEL_FILE%" %MODEL_TAG% )
 
- olaama push %MODEL_TAG%
+ ollama push %MODEL_TAG%
 
   if "!LATEST!"== "%%Q" (
-    olaama cp %MODEL_TAG% !USERNAME!/%MODEL_NAME%:latest
+    ollama cp %MODEL_TAG% !USERNAME!/%MODEL_NAME%:latest
 
-    olaama push !USERNAME!/%MODEL_NAME%:latest
+    ollama push !USERNAME!/%MODEL_NAME%:latest
 
 
  IF not "!VERSION!" == "" olama cp %MODEL_TAG% !USERNAME!/!MODEL_NAME!:%VERSION%! 
