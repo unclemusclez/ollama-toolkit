@@ -14,7 +14,7 @@ GIT_REPOS=(
 #   # "/mnt/example/data/docs/gitdocs"
 # )
 
-GITDOCS_DIR=/c/data/docs/gitdocs
+GITDOCS_DIR=$PWD/gitdocs
 LOGFILE=$GITDOCS_DIR/.log
 
 printf "Creating and changing directory to  $GITDOCS_DIR"
