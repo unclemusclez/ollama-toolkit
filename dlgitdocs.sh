@@ -2,7 +2,11 @@
 # export GIT_DISCOVERY_ACROSS_FILESYSTEM=0
 
 # Array of GitHub repository URLs (replace with your actual repo URLs)
-GIT_REPOS=(
+REPOS=(
+
+)
+
+SPARSED_REPOS=(
 ## Insert links per line here, enclosed in ""
 # "http://github.com/example/project1.git"
 # "http://github.com/example/project2.git"
@@ -14,39 +18,77 @@ GIT_REPOS=(
 #   # "/mnt/example/data/docs/gitdocs"
 # )
 
+timestamp() {
+  date +"%T" # current time
+}
 GITDOCS_DIR=$PWD/gitdocs
 LOGFILE=$GITDOCS_DIR/.log
 
-printf "Creating and changing directory to  $GITDOCS_DIR"
-echo "Creating and changing directory to $GITDOCS_DIR" > $LOGFILE
-mkdir -p gitdocs
-cd gitdocs
+echo -e "$(timestamp) ----------DLGitDocs---------\n" > $LOGFILE
+printf "\nCreating and changing directory to  $GITDOCS_DIR\n"
+echo -e "$(timestamp) Creating and changing directory to $GITDOCS_DIR\n" >> $LOGFILE
+mkdir -p $GITDOCS_DIR
+cd $GITDOCS_DIR
 git init
 
 # Loop through each repository URL
-printf "Looping through each repository URL"
-echo "Looping through each repository URL" >> $LOGFILE
-for repo in "${GIT_REPOS[@]}"; do
-
-  # Extract the repository name from the URL
+printf "\nLooping through each repository URL\n"
+echo -e "$(timestamp) Looping through each repository URL\n" >> $LOGFILE
+for repo in "${REPOS[@]}"; do
+# Extract the repository name from the URL
   repo_name=$(basename "$repo" .git)
-  printf "Adding git safe directories"
-  echo "Adding git safe directories" >> $LOGFILE
+  printf "\nAdding git safe directories\n"
+  echo -e "$(timestamp) Adding git safe directories\n" >> $LOGFILE
   for safe_dir in "${SAFE_DIRS[@]}"; do
     git config --global --add safe.directory $safe_dir/$repo_name
-    printf "Git safe directory added at $safe_dir/$repo_name"
-    echo "Git safe directory added at $safe_dir/$repo_name" >> $LOGFILE
+    printf "\nGit safe directory added at $safe_dir/$repo_name\n"
+    echo -e "$(timestamp) Git safe directory added at $safe_dir/$repo_name\n" >> $LOGFILE
   done
 
   # Clone the repository as a submodule within the directory
-  printf "Clone the repository as a submodule within the directory and changing directory to $repo_name"
-  echo "Clone the repository as a submodule within the directory and changing directory to $repo_name" >> $LOGFILE
+  printf "\nClone the repository as a submodule within the directory and changing directory to $repo_name\n"
+  echo -e "$(timestamp) Clone the repository as a submodule within the directory and changing directory to $repo_name\n" >> $LOGFILE
 
-  git clone --no-checkout --depth 1 "$repo" $repo_name
+  git clone --depth 1 "$repo" $GITDOCS_DIR/$repo_name
+# Update project's .gitmodules to register the added submodules
+# (This assumes you ran this script within your main Git project)
+  printf "\nUpdate project's .gitmodules to register the added submodules\n"
+  echo -e "$(timestamp) Update project's .gitmodules to register the added submodules\n" >> $LOGFILE 
+  
+
+  echo -e "[submodule \"$repo_name\"]
+  path = ./$repo_name
+  url = $repo\n" > .gitmodules
+
+  
+  printf "\nEcho'd Submodule\n"
+  echo -e "$(timestamp) Echo'd Submodule\n" >> $LOGFILE 
+done
+cd $GITDOCS_DIR
+# Loop through each repository URL
+printf "\nLooping through each SPARSED repository URL\n"
+echo -e "$(timestamp) Looping through each repository URL\n" >> $LOGFILE
+for repo in "${SPARSED_REPOS[@]}"; do
+
+  # Extract the repository name from the URL
+  repo_name=$(basename "$repo" .git)
+  printf "\nAdding git safe directories\n"
+  echo -e "$(timestamp) Adding git safe directories\n" >> $LOGFILE
+  for safe_dir in "${SAFE_DIRS[@]}"; do
+    git config --global --add safe.directory $safe_dir/$repo_name
+    printf "\nGit safe directory added at $safe_dir/$repo_name\n"
+    echo -e "$(timestamp) Git safe directory added at $safe_dir/$repo_name\n" >> $LOGFILE
+  done
+
+  # Clone the repository as a submodule within the directory
+  printf "\nClone the repository as a submodule within the directory and changing directory to $repo_name\n"
+  echo -e "$(timestamp) Clone the repository as a submodule within the directory and changing directory to $repo_name\n" >> $LOGFILE
+
+  git clone --no-checkout --depth 1 "$repo" $GITDOCS_DIR/$repo_name
 
   # Change to Repo directory and sparse checkout
-  printf "Sparsing Checkout and setting HEAD"
-  echo "Sparsing Checkout and setting HEAD" >> $LOGFILE 
+  printf "\nSparsing Checkout and setting HEAD\n"
+  echo -e "$(timestamp) Sparsing Checkout and setting HEAD\n" >> $LOGFILE 
 
   cd $repo_name
   git sparse-checkout set --no-cone '!/*' '/docs' '/Docs' '/doc' '/DOCS' '/Doc' '/DOC' '/documents' '/Documents' '/*.md' '/tutorials' '/examples' '/content' '/guides' '/*.txt' '/*.sh'
@@ -57,17 +99,17 @@ for repo in "${GIT_REPOS[@]}"; do
 
 # Update project's .gitmodules to register the added submodules
 # (This assumes you ran this script within your main Git project)
-  printf "Update project's .gitmodules to register the added submodules"
-  echo "Update project's .gitmodules to register the added submodules" >> $LOGFILE 
+  printf "\nUpdate project's .gitmodules to register the added submodules\n"
+  echo -e "$(timestamp) Update project's .gitmodules to register the added submodules\n" >> $LOGFILE 
   
 
-  echo "[submodule $repo_name]
+  echo -e "[submodule \"$repo_name\"]
   path = ./$repo_name
-  url = $repo" >> .gitmodules
+  url = $repo\n" >> .gitmodules
 
   
-  printf "Echo'd Submodule"
-  echo "Echo'd Submodule" >> $LOGFILE 
+  printf "\nEcho'd Submodule\n"
+  echo -e "$(timestamp) Echo'd Submodule\n" >> $LOGFILE 
 done
 
 # Initialize and update all submodules
