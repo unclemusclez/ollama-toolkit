@@ -75,6 +75,6 @@ for QUANT in "${QUANTIZATIONS[@]}"; do
    ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:latest"
    ollama push "$USERNAME/$MODEL_NAME:latest"
 
-   [ -n "$VERSION" ] && ( ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$VERSION"; ollama push "$USERNAME/$MODEL_NAME:$VERSION" )
+   [ -n "$PARAMETERS" ] && ( ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$PARAMETERS"; ollama push "$USERNAME/$MODEL_NAME:$PARAMETERS" )
   fi
 done
