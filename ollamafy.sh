@@ -81,7 +81,6 @@ else
     [ "$LATEST" = "$QUANT" ] && ( echo "$USERNAME/$MODEL_NAME:latest" )
     [ -n "$PARAMETERS" ] && ( echo "$USERNAME/$MODEL_NAME:$PARAMETERS" )
 
-  fi
   else
     if [ "$QUANT" = "fp16" ]; then
 
