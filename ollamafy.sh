@@ -71,7 +71,7 @@ for QUANT in "${QUANTIZATIONS[@]}"; do
 if FORCE_WRITE=False; then
   if ollama list | grep $MODEL_TAG; then
     echo "$MODEL_TAG found. Skipping Quantization."
-    if FORCE_PUSH=True; then;
+    if FORCE_PUSH=True; then
       ollama push "$MODEL_TAG"
     fi
   fi
