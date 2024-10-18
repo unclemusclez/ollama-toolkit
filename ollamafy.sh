@@ -78,8 +78,10 @@ if FORCE_WRITE=False; then
 else
   if TEST=True; then
     echo "$MODEL_TAG"
-    if [ "$LATEST" = "$QUANT" ]; then
-      echo "$USERNAME/$MODEL_NAME:latest"
+    [ "$LATEST" = "$QUANT" ] && ( echo "$USERNAME/$MODEL_NAME:latest" )
+    [ -n "$PARAMETERS" ] && ( echo "$USERNAME/$MODEL_NAME:$PARAMETERS" )
+
+  fi
   else
     if [ "$QUANT" = "fp16" ]; then
 
