@@ -62,19 +62,21 @@ for QUANT in "${QUANTIZATIONS[@]}"; do
       MODEL_TAG="$USERNAME/$MODEL_NAME:$PARAMETERS-$VERSION-$QUANT"
     fi
 
-
-  if [ "$QUANT" = "fp16" ]; then
-   ollama create -f "$MODEL_FILE" "$MODEL_TAG"
+  if ollama list | grep $MODEL_TAG; then
+    echo "$MODEL_TAG found. Skipping."
   else
-   ollama create --quantize "$QUANT" -f "$MODEL_FILE" "$MODEL_TAG" 
-  fi
+    if [ "$QUANT" = "fp16" ]; then
+    ollama create -f "$MODEL_FILE" "$MODEL_TAG"
+    else
+    ollama create --quantize "$QUANT" -f "$MODEL_FILE" "$MODEL_TAG" 
+    fi
 
-  ollama push "$MODEL_TAG"
+    ollama push "$MODEL_TAG"
 
-  if [ "$LATEST" = "$QUANT" ]; then
-   ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:latest"
-   ollama push "$USERNAME/$MODEL_NAME:latest"
+    if [ "$LATEST" = "$QUANT" ]; then
+    ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:latest"
+    ollama push "$USERNAME/$MODEL_NAME:latest"
 
-   [ -n "$PARAMETERS" ] && ( ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$PARAMETERS"; ollama push "$USERNAME/$MODEL_NAME:$PARAMETERS" )
+    [ -n "$PARAMETERS" ] && ( ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$PARAMETERS"; ollama push "$USERNAME/$MODEL_NAME:$PARAMETERS" )
   fi
 done
