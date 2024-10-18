@@ -16,6 +16,8 @@ QUANTIZATIONS=(
  "q2_K"
  "fp16"
 )
+FORCE_WRITE=True
+FORCE_PUSH=False
 
 while [[ $# -gt 0 ]]; do
  case $1 in
@@ -26,6 +28,8 @@ while [[ $# -gt 0 ]]; do
   -p|--parameters) PARAMETERS="$2"; shift 2 ;;
   -l|--latest) LATEST="$2"; shift 2 ;;
   -f|--file) MODEL_FILE="$2"; shift 2 ;;
+  -w|--force-write) FORCE_WRITE=True; shift 2 ;;
+  -u|--force-push) FORCE_PUSH=True; shift 2 ;;
   *) echo "Unknown flag: $1"; exit 1 ;;
  esac
 done
@@ -61,22 +65,26 @@ for QUANT in "${QUANTIZATIONS[@]}"; do
     if [ -n "$PARAMETERS" -a -n "$VERSION" ]; then 
       MODEL_TAG="$USERNAME/$MODEL_NAME:$PARAMETERS-$VERSION-$QUANT"
     fi
-
+if FORCE_WRITE=False; then
   if ollama list | grep $MODEL_TAG; then
-    echo "$MODEL_TAG found. Skipping."
-  else
-    if [ "$QUANT" = "fp16" ]; then
-    ollama create -f "$MODEL_FILE" "$MODEL_TAG"
-    else
-    ollama create --quantize "$QUANT" -f "$MODEL_FILE" "$MODEL_TAG" 
+    echo "$MODEL_TAG found. Skipping Quantization."
+    if FORCE_PUSH=True; then;
+      ollama push "$MODEL_TAG"
     fi
-
-    ollama push "$MODEL_TAG"
-
-    if [ "$LATEST" = "$QUANT" ]; then
-    ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:latest"
-    ollama push "$USERNAME/$MODEL_NAME:latest"
-
-    [ -n "$PARAMETERS" ] && ( ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$PARAMETERS"; ollama push "$USERNAME/$MODEL_NAME:$PARAMETERS" )
   fi
+else
+  if [ "$QUANT" = "fp16" ]; then
+  ollama create -f "$MODEL_FILE" "$MODEL_TAG"
+  else
+  ollama create --quantize "$QUANT" -f "$MODEL_FILE" "$MODEL_TAG" 
+  fi
+
+  ollama push "$MODEL_TAG"
+
+  if [ "$LATEST" = "$QUANT" ]; then
+  ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:latest"
+  ollama push "$USERNAME/$MODEL_NAME:latest"
+
+  [ -n "$PARAMETERS" ] && ( ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$PARAMETERS"; ollama push "$USERNAME/$MODEL_NAME:$PARAMETERS" )
+fi
 done
