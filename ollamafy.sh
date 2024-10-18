@@ -16,13 +16,13 @@ QUANTIZATIONS=(
   "q5_K_M"
   "q6_K"
   "q8_0"
-  "iq1_s"
+  # "iq1_s"
   "iq2_s"
-  "iq2_xs"
-  "iq2_xxs"
+  # "iq2_xs"
+  # "iq2_xxs"
   "iq3_s"
-  "iq3_xxs"
-  "iq4_xs"
+  # "iq3_xxs"
+  # "iq4_xs"
   "iq4_nl"
 )
 
@@ -66,42 +66,61 @@ if [ -n "$QUANTIZATION" ]; then
 fi
 echo "Going through Quants."
 for QUANT in "${QUANTIZATIONS[@]}"; do
-  echo "Current model is: $USERNAME/$MODEL_NAME:$QUANT"
-  [ -n "$PARAMETERS" ] && MODEL_TAG="$USERNAME/$MODEL_NAME:$PARAMETERS-$QUANT"
-  [ -n "$VERSION" ] && MODEL_TAG="$USERNAME/$MODEL_NAME:$VERSION-$QUANT"
-  [ -n "$PARAMETERS" ] && [ -n "$VERSION" ] && MODEL_TAG="$USERNAME/$MODEL_NAME:$PARAMETERS-$VERSION-$QUANT"
+  echo "Current model is: $USERNAME/$MODEL_NAME"
 
-  if [ "$FORCE_WRITE" = "0" ]; then
-    echo "FORCE_WRITE = $FORCE_WRITE"
-    if ollama list | grep -q "$MODEL_TAG"; then
-      echo "$MODEL_TAG found. Skipping Quantization."
-      if [ "$FORCE_PUSH" = "1" ]; then
-        ollama push "$MODEL_TAG"
-      fi
-    fi
+  # Start with username and model name
+  MODEL_TAG="$USERNAME/$MODEL_NAME"
+
+  if [ -z "$VERSION" ] || [ -z "$PARAMETERS" ]; then
+    [ -z "$PARAMETERS" ] && MODEL_TAG="$MODEL_TAG:$PARAMETERS-$QUANT"
+    [ -z "$VERSION" ] && MODEL_TAG="$MODEL_TAG:$VERSION-$QUANT"
+  else 
+    MODEL_TAG="$MODEL_TAG:$PARAMETERS-$VERSION-$QUANT"
+  fi
+
+
+  # # Add VERSION if it exists
+  # if [ -n "$VERSION" ] && [ -n "$PARAMETERS" ]; then
+  #     MODEL_TAG="$MODEL_TAG:$PARAMETERS-$VERSION-$QUANT"
+  # # Add PARAMETERS if they exist
+  # elif [ -n "$PARAMETERS" ]; then
+  #     MODEL_TAG="$MODEL_TAG:$PARAMETERS-$QUANT"
+
+  # # Add VERSION if it exists
+  # elif [ -n "$VERSION" ]; then
+  #     MODEL_TAG="$MODEL_TAG:$VERSION-$QUANT"
+  # fi
+
+  # if [ "$FORCE_WRITE" = "0" ]; then
+  #   echo "FORCE_WRITE = $FORCE_WRITE"
+  #   if ollama list | grep -q "$MODEL_TAG"; then
+  #     echo "$MODEL_TAG found. Skipping Quantization."
+  #     if [ "$FORCE_PUSH" = "1" ]; then
+  #       ollama push "$MODEL_TAG"
+  #     fi
+  #   fi
+  # else
+  if [ "$TEST" = "True" ]; then
+    echo 'TEST MODE = $TEST $MODEL_TAG'
+    [ "$LATEST" = "$QUANT" ] && echo "$USERNAME/$MODEL_NAME:latest"
+    [ -n "$PARAMETERS" ] && echo "$USERNAME/$MODEL_NAME:$PARAMETERS"
   else
-    if [ "$TEST" = "True" ]; then
-      echo 'TEST MODE = $TEST $MODEL_TAG'
-      [ "$LATEST" = "$QUANT" ] && echo "$USERNAME/$MODEL_NAME:latest"
-      [ -n "$PARAMETERS" ] && echo "$USERNAME/$MODEL_NAME:$PARAMETERS"
+    if [ "$QUANT" = "fp16" ]; then
+      ollama create -f "$MODEL_FILE" "$MODEL_TAG"
     else
-      if [ "$QUANT" = "fp16" ]; then
-        ollama create -f "$MODEL_FILE" "$MODEL_TAG"
-      else
-        ollama create --quantize "$QUANT" -f "$MODEL_FILE" "$MODEL_TAG"
-      fi
+      ollama create --quantize "$QUANT" -f "$MODEL_FILE" "$MODEL_TAG"
+    fi
 
-      ollama push "$MODEL_TAG"
+    ollama push "$MODEL_TAG"
 
-      if [ "$LATEST" = "$QUANT" ]; then
-        ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:latest"
-        ollama push "$USERNAME/$MODEL_NAME:latest"
-      fi
+    if [ "$LATEST" = "$QUANT" ]; then
+      ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:latest"
+      ollama push "$USERNAME/$MODEL_NAME:latest"
+    fi
 
-      if [ -n "$PARAMETERS" ]; then
-        ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$PARAMETERS"
-        ollama push "$USERNAME/$MODEL_NAME:$PARAMETERS"
-      fi
+    if [ -n "$PARAMETERS" ]; then
+      ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$PARAMETERS"
+      ollama push "$USERNAME/$MODEL_NAME:$PARAMETERS"
     fi
   fi
 done
