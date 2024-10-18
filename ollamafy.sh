@@ -25,6 +25,9 @@ QUANTIZATIONS=(
   # "iq4_xs"
   "iq4_nl"
 )
+FORCE_WRITE=False
+FORCE_PUSH=False
+TEST=False
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -52,32 +55,25 @@ MODEL_NAME=$(echo "$MODEL_NAME" | tr '[:upper:]' '[:lower:]')
 VERSION=$(echo "$VERSION" | tr '[:upper:]' '[:lower:]')
 PARAMETERS=$(echo "$PARAMETERS" | tr '[:upper:]' '[:lower:]')
 LATEST=$(echo "$LATEST" | tr '[:upper:]' '[:lower:]')
-FORCE_WRITE=False
-FORCE_PUSH=False
-TEST=False
 
 if [ -n "$LATEST" ] && [[ ! " ${QUANTIZATIONS[@]} " =~ " $LATEST " ]]; then
   echo "Error: LATEST must be one of the available quantizations"
   exit 1
 fi
 
-if [ -n "$QUANTIZATION" ]; then
+if [ -n "$QUANTIZATION" ] && [[ " ${QUANTIZATIONS[@]} " =~ " $QUANTIZATION " ]]; then
   QUANTIZATIONS=("$QUANTIZATION")
 fi
+
 echo "Going through Quants."
-for QUANT in "${QUANTIZATIONS[@]}"; do
-  echo "Current model is: $USERNAME/$MODEL_NAME"
-
+MODEL_TAG="$USERNAME/$MODEL_NAME"
+echo "Current model is: $MODEL_TAG"
+for QUANT in "${QUANTIZATIONS[@]}"; do 
   # Start with username and model name
-  MODEL_TAG="$USERNAME/$MODEL_NAME"
-
-  if [ -z "$VERSION" ] || [ -z "$PARAMETERS" ]; then
+  if [ -z "$VERSION" ] || [ -z "$PARAMETERS" ] && MODEL_TAG="$MODEL_TAG:$PARAMETERS-$VERSION-$QUANT"; then
     [ -z "$PARAMETERS" ] && MODEL_TAG="$MODEL_TAG:$PARAMETERS-$QUANT"
     [ -z "$VERSION" ] && MODEL_TAG="$MODEL_TAG:$VERSION-$QUANT"
-  else 
-    MODEL_TAG="$MODEL_TAG:$PARAMETERS-$VERSION-$QUANT"
   fi
-
 
   # # Add VERSION if it exists
   # if [ -n "$VERSION" ] && [ -n "$PARAMETERS" ]; then
@@ -100,10 +96,11 @@ for QUANT in "${QUANTIZATIONS[@]}"; do
   #     fi
   #   fi
   # else
+
   if [ "$TEST" = "True" ]; then
     echo 'TEST MODE = $TEST $MODEL_TAG'
     [ "$LATEST" = "$QUANT" ] && echo "$USERNAME/$MODEL_NAME:latest"
-    [ -n "$PARAMETERS" ] && echo "$USERNAME/$MODEL_NAME:$PARAMETERS"
+    [ -z "$PARAMETERS" ] && echo "$USERNAME/$MODEL_NAME:$PARAMETERS"
   else
     if [ "$QUANT" = "fp16" ]; then
       ollama create -f "$MODEL_FILE" "$MODEL_TAG"
@@ -113,14 +110,14 @@ for QUANT in "${QUANTIZATIONS[@]}"; do
 
     ollama push "$MODEL_TAG"
 
-    if [ "$LATEST" = "$QUANT" ]; then
-      ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:latest"
+    [ "$LATEST" = "$QUANT" ] && ( 
+      ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:latest";
       ollama push "$USERNAME/$MODEL_NAME:latest"
-    fi
+    )
 
-    if [ -n "$PARAMETERS" ]; then
-      ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$PARAMETERS"
+    [ -z "$PARAMETERS" ] && (
+      ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$PARAMETERS";
       ollama push "$USERNAME/$MODEL_NAME:$PARAMETERS"
-    fi
+    )
   fi
 done
