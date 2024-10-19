@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Script started"
-QUANTIZATIONS=(
+OLLAMAFY_QUANTIZATIONS=(
   "fp16"
   "q2_K"
   "q3_K_S"
@@ -25,99 +25,84 @@ QUANTIZATIONS=(
   # "iq4_xs"
   "iq4_nl"
 )
-FORCE_WRITE=False
-FORCE_PUSH=False
-TEST=False
+OLLAMAFY_FORCE_WRITE=False
+OLLAMAFY_FORCE_PUSH=False
+OLLAMAFY_TEST=False
+OLLAMAFY_LOCAL=False
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -q|--quant) QUANTIZATION="$2"; shift 2 ;;
-    -u|--username) USERNAME="$2"; shift 2 ;;
-    -m|--model) MODEL_NAME="$2"; shift 2 ;;
-    -v|--version) VERSION="$2"; shift 2 ;;
-    -p|--parameters) PARAMETERS="$2"; shift 2 ;;
-    -l|--latest) LATEST="$2"; shift 2 ;;
-    -f|--file) MODEL_FILE="$2"; shift 2 ;;
-    -w|--force-write) FORCE_WRITE=True shift ;;
-    -x|--force-push) FORCE_PUSH=True; shift ;;
-    -t|--test) TEST=True; shift ;;
+    -q|--quant) OLLAMAFY_QUANTIZATION="$2"; shift 2 ;;
+    -u|--username) OLLAMAFY_USERNAME="$2"; shift 2 ;;
+    -m|--model) OLLAMAFY_MODEL_NAME="$2"; shift 2 ;;
+    -v|--version) OLLAMAFY_VERSION="$2"; shift 2 ;;
+    -p|--parameters) OLLAMAFY_PARAMETERS="$2"; shift 2 ;;
+    -l|--latest) OLLAMAFY_LATEST="$2"; shift 2 ;;
+    -f|--file) OLLAMAFY_MODEL_FILE="$2"; shift 2 ;;
+    -fw|--force-write) OLLAMAFY_FORCE_WRITE=True shift ;;
+    -fp|--force-push) OLLAMAFY_FORCE_PUSH=True; shift ;;
+    -tr|--test-run) OLLAMAFY_TEST=True; shift ;;
+    -lo|--local) OLLAMAFY_LOCAL=True; shift ;;
     *) echo "Unknown flag: $1"; exit 1 ;;
   esac
 done
 
-if [ -z "$USERNAME" ] || [ -z "$MODEL_NAME" ] || [ -z "$MODEL_FILE" ]; then
+if [ -z "$OLLAMAFY_USERNAME" ] || [ -z "$OLLAMAFY_MODEL_NAME" ] || [ -z "$OLLAMAFY_MODEL_FILE" ]; then
   echo "Error: --username, --model, and --file are required"
   exit 1
 fi
 
-USERNAME=$(echo "$USERNAME" | tr '[:upper:]' '[:lower:]')
-MODEL_NAME=$(echo "$MODEL_NAME" | tr '[:upper:]' '[:lower:]')
-VERSION=$(echo "$VERSION" | tr '[:upper:]' '[:lower:]')
-PARAMETERS=$(echo "$PARAMETERS" | tr '[:upper:]' '[:lower:]')
-LATEST=$(echo "$LATEST" | tr '[:upper:]' '[:lower:]')
+OLLAMAFY_USERNAME=$(echo "$OLLAMAFY_USERNAME" | tr '[:upper:]' '[:lower:]')
+OLLAMAFY_MODEL_NAME=$(echo "$OLLAMAFY_MODEL_NAME" | tr '[:upper:]' '[:lower:]')
+OLLAMAFY_VERSION=$(echo "$OLLAMAFY_VERSION" | tr '[:upper:]' '[:lower:]')
+OLLAMAFY_PARAMETERS=$(echo "$OLLAMAFY_PARAMETERS" | tr '[:upper:]' '[:lower:]')
+OLLAMAFY_LATEST=$(echo "$OLLAMAFY_LATEST" | tr '[:upper:]' '[:lower:]')
 
-if [ -n "$LATEST" ] && [[ ! " ${QUANTIZATIONS[@]} " =~ " $LATEST " ]]; then
+if [ -n "$OLLAMAFY_LATEST" ] && [[ ! " ${OLLAMAFY_QUANTIZATIONS[@]} " =~ " $OLLAMAFY_LATEST " ]]; then
   echo "Error: LATEST must be one of the available quantizations"
   exit 1
 fi
 
-if [ -n "$QUANTIZATION" ] && [[ " ${QUANTIZATIONS[@]} " =~ " $QUANTIZATION " ]]; then
-  QUANTIZATIONS=("$QUANTIZATION")
+if [ -n "$OLLAMAFY_QUANTIZATION" ] && [[ " ${OLLAMAFY_QUANTIZATIONS[@]} " =~ " $OLLAMAFY_QUANTIZATION " ]]; then
+  OLLAMAFY_QUANTIZATIONS=("$OLLAMAFY_QUANTIZATION")
 fi
 
 echo "Going through Quants."
-MODEL_TAG="$USERNAME/$MODEL_NAME"
-echo "Current model is: $MODEL_TAG"
-for QUANT in "${QUANTIZATIONS[@]}"; do 
+OLLAMAFY_MODEL_NAME_BASE="$OLLAMAFY_USERNAME/$OLLAMAFY_MODEL_NAME"
+
+
+
+for OLLAMAFY_MODEL_QUANTIZATION in "${OLLAMAFY_QUANTIZATIONS[@]}"; do 
+  MODEL_TAG="$OLLAMAFY_MODEL_NAME_BASE"
+  echo "Current model is: $MODEL_TAG"
   # Start with username and model name
-  if [ -z "$VERSION" ] || [ -z "$PARAMETERS" ] && MODEL_TAG="$MODEL_TAG:$PARAMETERS-$VERSION-$QUANT"; then
-    [ -z "$PARAMETERS" ] && MODEL_TAG="$MODEL_TAG:$PARAMETERS-$QUANT"
-    [ -z "$VERSION" ] && MODEL_TAG="$MODEL_TAG:$VERSION-$QUANT"
-  fi
-
-  # # Add VERSION if it exists
-  # if [ -n "$VERSION" ] && [ -n "$PARAMETERS" ]; then
-  #     MODEL_TAG="$MODEL_TAG:$PARAMETERS-$VERSION-$QUANT"
-  # # Add PARAMETERS if they exist
-  # elif [ -n "$PARAMETERS" ]; then
-  #     MODEL_TAG="$MODEL_TAG:$PARAMETERS-$QUANT"
-
-  # # Add VERSION if it exists
-  # elif [ -n "$VERSION" ]; then
-  #     MODEL_TAG="$MODEL_TAG:$VERSION-$QUANT"
-  # fi
-
-  # if [ "$FORCE_WRITE" = "0" ]; then
-  #   echo "FORCE_WRITE = $FORCE_WRITE"
-  #   if ollama list | grep -q "$MODEL_TAG"; then
-  #     echo "$MODEL_TAG found. Skipping Quantization."
-  #     if [ "$FORCE_PUSH" = "1" ]; then
-  #       ollama push "$MODEL_TAG"
-  #     fi
-  #   fi
-  # else
-
-  if [ "$TEST" = "True" ]; then
-    echo 'TEST MODE = $TEST $MODEL_TAG'
-    [ "$LATEST" = "$QUANT" ] && echo "$USERNAME/$MODEL_NAME:latest"
-    [ -z "$PARAMETERS" ] && echo "$USERNAME/$MODEL_NAME:$PARAMETERS"
+  if [ "$OLLAMAFY_VERSION" ] && [ "$OLLAMAFY_PARAMETERS" ]; then
+    MODEL_TAG="$MODEL_TAG:$OLLAMAFY_PARAMETERS-$OLLAMAFY_VERSION-$OLLAMAFY_MODEL_QUANTIZATION"
   else
-    if [ "$QUANT" = "fp16" ]; then
+    [ ! "$OLLAMAFY_VERSION" ] && MODEL_TAG="$MODEL_TAG:$OLLAMAFY_PARAMETERS-$OLLAMAFY_MODEL_QUANTIZATION"
+    [ ! "$OLLAMAFY_PARAMETERS" ] && MODEL_TAG="$MODEL_TAG:$OLLAMAFY_VERSION-$OLLAMAFY_MODEL_QUANTIZATION"
+  fi
+  echo "TESTRUN = $OLLAMAFY_TEST for $MODEL_TAG"
+  if [ "$OLLAMAFY_TEST" ]; then
+    [ "$OLLAMAFY_LATEST" = "$OLLAMAFY_MODEL_QUANTIZATION" ] && echo "$OLLAMAFY_MODEL_NAME_BASE:latest"
+    [ "$OLLAMAFY_PARAMETERS" ] && echo "$OLLAMAFY_MODEL_NAME_BASE:$OLLAMAFY_PARAMETERS"
+  else
+    if [ "$OLLAMAFY_MODEL_QUANTIZATION" = "fp16" ]; then
       ollama create -f "$MODEL_FILE" "$MODEL_TAG"
     else
-      ollama create --quantize "$QUANT" -f "$MODEL_FILE" "$MODEL_TAG"
+      ollama create --quantize "$OLLAMAFY_MODEL_QUANTIZATION" -f "$OLLAMAFY_MODEL_FILE" "$MODEL_TAG"
     fi
 
-    ollama push "$MODEL_TAG"
+    [ ! "$OLLAMAFY_LOCAL" ] && ollama push "$MODEL_TAG"
 
-    [ "$LATEST" = "$QUANT" ] && ( 
-      ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:latest";
-      ollama push "$USERNAME/$MODEL_NAME:latest"
+    [ "$OLLAMAFY_LATEST" = "$OLLAMAFY_MODEL_QUANTIZATION" ] && ( 
+      ollama cp "$MODEL_TAG" "$OLLAMAFY_MODEL_NAME_BASE:latest";
+      [ ! "$OLLAMAFY_LOCAL" ] && ollama push "$OLLAMAFY_MODEL_NAME_BASE:latest"
     )
 
-    [ -z "$PARAMETERS" ] && (
-      ollama cp "$MODEL_TAG" "$USERNAME/$MODEL_NAME:$PARAMETERS";
-      ollama push "$USERNAME/$MODEL_NAME:$PARAMETERS"
+    [ "$OLLAMAFY_PARAMETERS" ] && (
+      ollama cp "$MODEL_TAG" "$OLLAMAFY_MODEL_NAME_BASE:$PARAMETERS";
+      [ ! "$OLLAMAFY_LOCAL" ] && ollama push "$OLLAMAFY_MODEL_NAME_BASE:$PARAMETERS"
     )
   fi
 done
