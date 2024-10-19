@@ -25,10 +25,10 @@ OLLAMAFY_QUANTIZATIONS=(
   # "iq4_xs"
   "iq4_nl"
 )
-OLLAMAFY_FORCE_WRITE=False
-OLLAMAFY_FORCE_PUSH=False
-OLLAMAFY_TEST=False
-OLLAMAFY_LOCAL=False
+OLLAMAFY_FORCE_WRITE=false
+OLLAMAFY_FORCE_PUSH=false
+OLLAMAFY_TEST=false
+OLLAMAFY_LOCAL=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -39,10 +39,10 @@ while [[ $# -gt 0 ]]; do
     -p|--parameters) OLLAMAFY_PARAMETERS="$2"; shift 2 ;;
     -l|--latest) OLLAMAFY_LATEST="$2"; shift 2 ;;
     -f|--file) OLLAMAFY_MODEL_FILE="$2"; shift 2 ;;
-    -fw|--force-write) OLLAMAFY_FORCE_WRITE=True shift ;;
-    -fp|--force-push) OLLAMAFY_FORCE_PUSH=True; shift ;;
-    -tr|--test-run) OLLAMAFY_TEST=True; shift ;;
-    -lo|--local) OLLAMAFY_LOCAL=True; shift ;;
+    -fw|--force-write) OLLAMAFY_FORCE_WRITE=true shift ;;
+    -fp|--force-push) OLLAMAFY_FORCE_PUSH=true; shift ;;
+    -tr|--test-run) OLLAMAFY_TEST=true; shift ;;
+    -lo|--local) OLLAMAFY_LOCAL=true; shift ;;
     *) echo "Unknown flag: $1"; exit 1 ;;
   esac
 done
@@ -83,26 +83,48 @@ for OLLAMAFY_MODEL_QUANTIZATION in "${OLLAMAFY_QUANTIZATIONS[@]}"; do
     [ ! "$OLLAMAFY_PARAMETERS" ] && MODEL_TAG="$MODEL_TAG:$OLLAMAFY_VERSION-$OLLAMAFY_MODEL_QUANTIZATION"
   fi
   echo "TESTRUN = $OLLAMAFY_TEST for $MODEL_TAG"
-  if [ "$OLLAMAFY_TEST" ]; then
+  if [ "$OLLAMAFY_TEST" = true ]; then
     [ "$OLLAMAFY_LATEST" = "$OLLAMAFY_MODEL_QUANTIZATION" ] && echo "$OLLAMAFY_MODEL_NAME_BASE:latest"
     [ "$OLLAMAFY_PARAMETERS" ] && echo "$OLLAMAFY_MODEL_NAME_BASE:$OLLAMAFY_PARAMETERS"
+    
   else
-    if [ "$OLLAMAFY_MODEL_QUANTIZATION" = "fp16" ]; then
-      ollama create -f "$MODEL_FILE" "$MODEL_TAG"
-    else
-      ollama create --quantize "$OLLAMAFY_MODEL_QUANTIZATION" -f "$OLLAMAFY_MODEL_FILE" "$MODEL_TAG"
+    if [ $OLLAMAFY_TEST = false ]; then
+      if ollama list | grep $MODEL_TAG; then
+        echo "$MODEL_TAG found. Skipping."
+        if [ $OLLAMAFY_FORCE_PUSH = true ]; then
+          echo "Force-Push is Active."
+          ollama push "$MODEL_TAG"
+          if [ "$OLLAMAFY_LATEST" = "$OLLAMAFY_MODEL_QUANTIZATION" ]; then 
+            ollama cp "$MODEL_TAG" "$OLLAMAFY_MODEL_NAME_BASE:latest"
+            if [ "$OLLAMAFY_LOCAL" = false ]; then
+              ollama push "$OLLAMAFY_MODEL_NAME_BASE:latest"
+              if [ "$OLLAMAFY_PARAMETERS" ]; then
+                ollama cp "$MODEL_TAG" "$OLLAMAFY_MODEL_NAME_BASE:$OLLAMAFY_PARAMETERS"
+                [ "$OLLAMAFY_LOCAL" = false ] && ollama push "$OLLAMAFY_MODEL_NAME_BASE:$OLLAMAFY_PARAMETERS"
+              fi
+            fi
+          fi
+        fi
+      else
+        if [ "$OLLAMAFY_MODEL_QUANTIZATION" = "fp16" ]; then
+          ollama create -f "$OLLAMAFY_MODEL_FILE" "$MODEL_TAG"
+        else
+          ollama create --quantize "$OLLAMAFY_MODEL_QUANTIZATION" -f "$OLLAMAFY_MODEL_FILE" "$MODEL_TAG"
+        fi
+
+        [ "$OLLAMAFY_LOCAL" = false ] && ollama push "$MODEL_TAG"
+
+        if [ "$OLLAMAFY_LATEST" = "$OLLAMAFY_MODEL_QUANTIZATION" ]; then 
+          ollama cp "$MODEL_TAG" "$OLLAMAFY_MODEL_NAME_BASE:latest"
+          if [ "$OLLAMAFY_LOCAL" = false ]; then
+            ollama push "$OLLAMAFY_MODEL_NAME_BASE:latest"
+            if [ "$OLLAMAFY_PARAMETERS" ]; then
+              ollama cp "$MODEL_TAG" "$OLLAMAFY_MODEL_NAME_BASE:$OLLAMAFY_PARAMETERS"
+              [ "$OLLAMAFY_LOCAL" = false ] && ollama push "$OLLAMAFY_MODEL_NAME_BASE:$OLLAMAFY_PARAMETERS"
+            fi
+          fi
+        fi
+      fi
     fi
-
-    [ ! "$OLLAMAFY_LOCAL" ] && ollama push "$MODEL_TAG"
-
-    [ "$OLLAMAFY_LATEST" = "$OLLAMAFY_MODEL_QUANTIZATION" ] && ( 
-      ollama cp "$MODEL_TAG" "$OLLAMAFY_MODEL_NAME_BASE:latest";
-      [ ! "$OLLAMAFY_LOCAL" ] && ollama push "$OLLAMAFY_MODEL_NAME_BASE:latest"
-    )
-
-    [ "$OLLAMAFY_PARAMETERS" ] && (
-      ollama cp "$MODEL_TAG" "$OLLAMAFY_MODEL_NAME_BASE:$PARAMETERS";
-      [ ! "$OLLAMAFY_LOCAL" ] && ollama push "$OLLAMAFY_MODEL_NAME_BASE:$PARAMETERS"
-    )
   fi
 done
