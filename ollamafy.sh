@@ -58,7 +58,7 @@ OLLAMAFY_VERSION=$(echo "$OLLAMAFY_VERSION" | tr '[:upper:]' '[:lower:]')
 OLLAMAFY_PARAMETERS=$(echo "$OLLAMAFY_PARAMETERS" | tr '[:upper:]' '[:lower:]')
 OLLAMAFY_LATEST=$(echo "$OLLAMAFY_LATEST" | tr '[:upper:]' '[:lower:]')
 
-if [ -z "$OLLAMAFY_LATEST" ] || [[ ! " ${OLLAMAFY_QUANTIZATIONS[*]} " =~  $OLLAMAFY_LATEST ]]; then
+if [ -n "$OLLAMAFY_LATEST" ] || [[ ! " ${OLLAMAFY_QUANTIZATIONS[*]} " =~  $OLLAMAFY_LATEST ]]; then
     echo "Error: LATEST must be one of the available quantizations"
     exit 1
 fi
